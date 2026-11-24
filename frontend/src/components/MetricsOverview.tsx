@@ -2,102 +2,118 @@
 
 import React from 'react';
 import { MetricsSummary } from '../lib/types';
-import {
-  Send,
-  Activity,
-  RotateCcw,
-  CheckCircle2,
-  AlertOctagon,
-  ShieldAlert,
-  Clock,
-  Gauge,
-} from 'lucide-react';
+import { Send, Clock, RotateCcw, Check, AlertOctagon, Shield, Zap, Gauge } from 'lucide-react';
 
 interface MetricsOverviewProps {
   metrics: MetricsSummary | null;
 }
 
 export const MetricsOverview: React.FC<MetricsOverviewProps> = ({ metrics }) => {
-  const cards = [
+  const primaryStats = [
     {
-      label: 'Total Dispatched',
-      value: metrics?.total_jobs ?? 0,
+      label: 'Total dispatched',
+      value: (metrics?.total_jobs ?? 0).toLocaleString(),
       icon: Send,
-      color: 'text-blue-400',
-      bgColor: 'bg-blue-500/10 border-blue-500/20',
+      indicator: null,
     },
     {
-      label: 'In-Flight (Processing)',
-      value: metrics?.processing ?? 0,
-      icon: Activity,
-      color: 'text-amber-400',
-      bgColor: 'bg-amber-500/10 border-amber-500/20',
+      label: 'In-flight processing',
+      value: (metrics?.processing ?? 0).toLocaleString(),
+      icon: Clock,
+      indicator: metrics?.processing ? 'bg-[#f59e0b]' : null,
     },
     {
-      label: 'Retrying (Backoff)',
-      value: metrics?.retrying ?? 0,
+      label: 'Retrying backoff',
+      value: (metrics?.retrying ?? 0).toLocaleString(),
       icon: RotateCcw,
-      color: 'text-orange-400',
-      bgColor: 'bg-orange-500/10 border-orange-500/20',
+      indicator: metrics?.retrying ? 'bg-[#f59e0b]' : null,
     },
     {
-      label: 'Delivered (Success)',
-      value: metrics?.completed ?? 0,
-      icon: CheckCircle2,
-      color: 'text-emerald-400',
-      bgColor: 'bg-emerald-500/10 border-emerald-500/20',
+      label: 'Delivered successfully',
+      value: (metrics?.completed ?? 0).toLocaleString(),
+      icon: Check,
+      indicator: metrics?.completed ? 'bg-[#4cc38a]' : null,
     },
+  ];
+
+  const diagnosticStats = [
     {
-      label: 'Dead Letter Queue',
+      label: 'Dead letter queue',
       value: metrics?.dlq ?? 0,
       icon: AlertOctagon,
-      color: 'text-rose-400',
-      bgColor: 'bg-rose-500/10 border-rose-500/20',
+      alert: (metrics?.dlq ?? 0) > 0,
     },
     {
-      label: 'Crashes Recovered',
+      label: 'Crashes recovered',
       value: metrics?.recovered ?? 0,
-      icon: ShieldAlert,
-      color: 'text-purple-400',
-      bgColor: 'bg-purple-500/10 border-purple-500/20',
+      icon: Shield,
+      alert: false,
     },
     {
-      label: 'Avg Response Latency',
+      label: 'Average latency',
       value: `${metrics?.avg_latency_ms ?? 0} ms`,
-      icon: Clock,
-      color: 'text-cyan-400',
-      bgColor: 'bg-cyan-500/10 border-cyan-500/20',
+      icon: Zap,
+      alert: false,
     },
     {
-      label: 'Success Rate',
+      label: 'Delivery success rate',
       value: `${metrics?.success_rate_percent ?? 100}%`,
       icon: Gauge,
-      color: 'text-teal-400',
-      bgColor: 'bg-teal-500/10 border-teal-500/20',
+      alert: false,
     },
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 my-6">
-      {cards.map((card, idx) => {
-        const Icon = card.icon;
-        return (
-          <div
-            key={idx}
-            className={`p-3.5 rounded-xl border ${card.bgColor} backdrop-blur-sm transition-transform hover:-translate-y-0.5`}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider truncate">
-                {card.label}
+    <div className="space-y-3 my-6">
+      {/* Primary Flow Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {primaryStats.map((item, idx) => {
+          const Icon = item.icon;
+          return (
+            <div
+              key={idx}
+              className="bg-[#11141c] border border-white/[0.08] rounded-lg p-4 transition-colors duration-150 hover:border-white/[0.14]"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-[#7a8296] font-normal">
+                  {item.label}
+                </span>
+                <div className="flex items-center gap-1.5">
+                  {item.indicator && (
+                    <span className={`h-1.5 w-1.5 rounded-full ${item.indicator}`} />
+                  )}
+                  <Icon className="h-3.5 w-3.5 text-[#7a8296]" />
+                </div>
+              </div>
+              <div className="text-2xl font-mono font-medium tracking-tight text-[#eef0f5] tabular-nums">
+                {item.value}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Operational Diagnostic Strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 bg-[#0d1017] border border-white/[0.06] rounded-lg">
+        {diagnosticStats.map((item, idx) => {
+          const Icon = item.icon;
+          return (
+            <div key={idx} className="flex items-center justify-between px-2">
+              <div className="flex items-center gap-2">
+                <Icon className={`h-3.5 w-3.5 ${item.alert ? 'text-[#e5484d]' : 'text-[#7a8296]'}`} />
+                <span className="text-xs text-[#7a8296]">{item.label}</span>
+              </div>
+              <span
+                className={`text-xs font-mono font-medium tabular-nums ${
+                  item.alert ? 'text-[#e5484d]' : 'text-[#a3a9b8]'
+                }`}
+              >
+                {item.value}
               </span>
-              <Icon className={`h-4 w-4 ${card.color}`} />
             </div>
-            <div className="text-xl font-bold tracking-tight text-white">
-              {card.value}
-            </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 };

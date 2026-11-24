@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Reliable Webhook Engine | Fault-Tolerant Async Orchestrator',
-  description: 'Enterprise async webhook orchestrator with exponential retries, DLQ isolation, and kill -9 recovery proof',
+  title: 'Webhook Engine · Fault-Tolerant Asynchronous Dispatcher',
+  description: 'Asynchronous webhook delivery engine with exponential retry scheduling, dead-letter queue isolation, and crash recovery.',
 };
 
 export default function RootLayout({
@@ -13,7 +13,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
-      <body className="min-h-screen bg-[#090d16] text-slate-100 antialiased selection:bg-emerald-500 selection:text-white">
+      <body className="min-h-screen bg-[#0b0d14] text-[#eef0f5] antialiased selection:bg-[#252b3a] selection:text-white font-sans">
         {children}
       </body>
     </html>

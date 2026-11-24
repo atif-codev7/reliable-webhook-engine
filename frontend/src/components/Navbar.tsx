@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Activity, Radio, Cpu, Shield, ExternalLink } from 'lucide-react';
+import { Activity, Layers, RotateCcw } from 'lucide-react';
 
 interface NavbarProps {
   sseStatus: 'connected' | 'connecting' | 'disconnected';
@@ -17,52 +17,47 @@ export const Navbar: React.FC<NavbarProps> = ({
   dlqCount,
 }) => {
   return (
-    <header className="border-b border-slate-800 bg-[#0d1322]/80 backdrop-blur-md sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        {/* Brand & Flagship Label */}
+    <header className="border-b border-white/[0.08] bg-[#07080d] sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
+        {/* Brand */}
         <div className="flex items-center space-x-3">
-          <div className="h-9 w-9 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold shadow-lg shadow-emerald-500/10">
-            <Cpu className="h-5 w-5" />
+          <div className="h-7 w-7 rounded-md bg-[#1a1e28] border border-white/[0.08] flex items-center justify-center text-[#eef0f5]">
+            <Activity className="h-4 w-4 text-[#a3a9b8]" />
           </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <span className="font-bold text-white tracking-wide text-base">
-                WEBHOOK ENGINE
-              </span>
-              <span className="text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                PROJ 2: AT-LEAST-ONCE
-              </span>
-            </div>
-            <p className="text-xs text-slate-400 hidden sm:block">
-              FastAPI Producer → Redis Queue → ARQ Workers → DLQ → Kill-9 Proof
-            </p>
+          <div className="flex items-baseline space-x-2">
+            <span className="font-medium text-[#eef0f5] text-sm tracking-tight">
+              Webhook Engine
+            </span>
+            <span className="text-xs text-[#7a8296] hidden sm:inline">
+              asynchronous dispatcher
+            </span>
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <nav className="flex items-center space-x-1 sm:space-x-2">
+        {/* Tab Navigation (Segmented control) */}
+        <nav className="flex items-center bg-[#11141c] p-1 rounded-lg border border-white/[0.06] text-xs">
           <button
             onClick={() => setActiveTab('stream')}
-            className={`px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-all ${
+            className={`h-7 px-3 rounded-md font-medium transition-colors duration-150 ${
               activeTab === 'stream'
-                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                ? 'bg-[#1a1e28] text-[#eef0f5] border border-white/[0.08]'
+                : 'text-[#a3a9b8] hover:text-[#eef0f5]'
             }`}
           >
-            Live Stream & Dispatch
+            Live stream
           </button>
 
           <button
             onClick={() => setActiveTab('dlq')}
-            className={`relative px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-all ${
+            className={`h-7 px-3 rounded-md font-medium transition-colors duration-150 flex items-center gap-1.5 ${
               activeTab === 'dlq'
-                ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40 shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                ? 'bg-[#1a1e28] text-[#eef0f5] border border-white/[0.08]'
+                : 'text-[#a3a9b8] hover:text-[#eef0f5]'
             }`}
           >
-            DLQ Inspector
+            <span>Dead letter queue</span>
             {dlqCount > 0 && (
-              <span className="ml-1.5 px-1.5 py-0.2 text-[10px] font-bold rounded-full bg-rose-500 text-white">
+              <span className="px-1.5 py-0.2 text-[11px] font-mono font-medium rounded bg-[#e5484d]/15 text-[#e5484d] border border-[#e5484d]/25">
                 {dlqCount}
               </span>
             )}
@@ -70,43 +65,30 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           <button
             onClick={() => setActiveTab('chaos')}
-            className={`px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-all ${
+            className={`h-7 px-3 rounded-md font-medium transition-colors duration-150 ${
               activeTab === 'chaos'
-                ? 'bg-purple-500/20 text-purple-400 border border-purple-500/40 shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                ? 'bg-[#1a1e28] text-[#eef0f5] border border-white/[0.08]'
+                : 'text-[#a3a9b8] hover:text-[#eef0f5]'
             }`}
           >
-            Kill-9 Proof Lab
+            Crash recovery
           </button>
         </nav>
 
-        {/* Real-time SSE Connection Pill */}
+        {/* SSE Stream Status Indicator */}
         <div className="flex items-center space-x-2">
-          <div
-            className={`flex items-center space-x-2 px-2.5 py-1 rounded-full text-xs font-medium border ${
-              sseStatus === 'connected'
-                ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-400'
-                : sseStatus === 'connecting'
-                ? 'bg-amber-950/40 border-amber-500/30 text-amber-400'
-                : 'bg-rose-950/40 border-rose-500/30 text-rose-400'
-            }`}
-          >
-            <span className="relative flex h-2 w-2">
-              {sseStatus === 'connected' && (
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              )}
-              <span
-                className={`relative inline-flex rounded-full h-2 w-2 ${
-                  sseStatus === 'connected'
-                    ? 'bg-emerald-500'
-                    : sseStatus === 'connecting'
-                    ? 'bg-amber-500'
-                    : 'bg-rose-500'
-                }`}
-              ></span>
-            </span>
-            <span className="hidden md:inline uppercase tracking-wider text-[11px]">
-              {sseStatus === 'connected' ? 'SSE Live' : sseStatus}
+          <div className="flex items-center space-x-2 px-2.5 py-1 rounded-md bg-[#11141c] border border-white/[0.08] text-xs">
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${
+                sseStatus === 'connected'
+                  ? 'bg-[#4cc38a]'
+                  : sseStatus === 'connecting'
+                  ? 'bg-[#f59e0b]'
+                  : 'bg-[#e5484d]'
+              }`}
+            />
+            <span className="font-mono text-[11px] text-[#7a8296] hidden md:inline">
+              {sseStatus === 'connected' ? 'telemetry live' : sseStatus}
             </span>
           </div>
         </div>

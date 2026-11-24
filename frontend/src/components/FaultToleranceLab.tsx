@@ -3,15 +3,14 @@
 import React, { useState } from 'react';
 import { dispatchWebhook, simulateWorkerCrash, triggerReconciliation } from '../lib/api';
 import {
-  ShieldAlert,
-  Skull,
+  Shield,
   RotateCcw,
   Zap,
-  CheckCircle2,
-  ArrowRight,
-  Cpu,
-  RefreshCw,
+  Check,
   Terminal,
+  Loader2,
+  Cpu,
+  PowerOff,
 } from 'lucide-react';
 
 interface FaultToleranceLabProps {
@@ -25,7 +24,7 @@ export const FaultToleranceLab: React.FC<FaultToleranceLabProps> = ({ onEventTri
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
   const addLog = (msg: string) => {
-    const time = new Date().toLocaleTimeString();
+    const time = new Date().toLocaleTimeString([], { hour12: false });
     setSimulationLogs((prev) => [`[${time}] ${msg}`, ...prev]);
   };
 
@@ -33,19 +32,19 @@ export const FaultToleranceLab: React.FC<FaultToleranceLabProps> = ({ onEventTri
   const handleStep1 = async () => {
     setIsProcessing(true);
     try {
-      addLog('Dispatching slow webhook to simulate in-flight execution...');
+      addLog('Dispatching in-flight task with 6s latency target...');
       const res = await dispatchWebhook({
-        event_type: 'chaos.test_job',
+        event_type: 'settlement.reconciliation',
         destination_url: 'http://localhost:8001/api/v1/mock/slow?delay_seconds=6',
-        payload: { test_type: 'kill-9-recovery-proof', initiated_at: new Date().toISOString() },
+        payload: { test_type: 'kill-9-recovery', initiated_at: new Date().toISOString() },
         max_retries: 5,
       });
       setActiveJobId(res.job_id);
-      addLog(`Job created: ${res.job_id.slice(0, 8)}... Status: 202 Accepted & QUEUED`);
+      addLog(`Task ${res.job_id.slice(0, 8)} accepted and locked with 10s lease duration`);
       setStep(2);
       if (onEventTriggered) onEventTriggered();
     } catch (err: any) {
-      addLog(`Error creating job: ${err.message}`);
+      addLog(`Task creation error: ${err.message}`);
     } finally {
       setIsProcessing(false);
     }
@@ -56,14 +55,14 @@ export const FaultToleranceLab: React.FC<FaultToleranceLabProps> = ({ onEventTri
     if (!activeJobId) return;
     setIsProcessing(true);
     try {
-      addLog(`Sending simulated SIGKILL (kill -9) to worker holding job ${activeJobId.slice(0, 8)}...`);
+      addLog(`Simulating sudden worker termination (SIGKILL) on task ${activeJobId.slice(0, 8)}...`);
       const res = await simulateWorkerCrash(activeJobId);
-      addLog(`WORKER CRASHED: ${res.worker}. Process terminated immediately with 0 cleanup.`);
-      addLog(`Job ${activeJobId.slice(0, 8)}... is now stranded in PROCESSING with expired lease!`);
+      addLog(`Worker ${res.worker} terminated abruptly. Lease heartbeat halted.`);
+      addLog(`Task remains in processing state with expired lease.`);
       setStep(3);
       if (onEventTriggered) onEventTriggered();
     } catch (err: any) {
-      addLog(`Error simulating crash: ${err.message}`);
+      addLog(`Simulation error: ${err.message}`);
     } finally {
       setIsProcessing(false);
     }
@@ -73,14 +72,13 @@ export const FaultToleranceLab: React.FC<FaultToleranceLabProps> = ({ onEventTri
   const handleStep3 = async () => {
     setIsProcessing(true);
     try {
-      addLog('Watchdog Reconciler running periodic scan for expired leases...');
+      addLog('Running watchdog reconciliation cycle...');
       const res = await triggerReconciliation();
       if (res.recovered_count > 0) {
-        addLog(`SUCCESS! Watchdog detected ${res.recovered_count} orphaned job(s) from crashed workers.`);
-        addLog(`Lease reclaimed, crash audit logged, and task safely re-enqueued to worker fleet!`);
-        addLog(`Zero dropped tasks. Zero zombie states. At-least-once delivery GUARANTEED.`);
+        addLog(`Watchdog cycle complete: ${res.recovered_count} expired lease reclaimed.`);
+        addLog(`Crash audit appended to attempt log. Task re-enqueued to active fleet.`);
       } else {
-        addLog('Watchdog scan completed: No orphaned jobs found.');
+        addLog('Watchdog cycle complete: no expired leases detected.');
       }
       setStep(1);
       setActiveJobId(null);
@@ -93,155 +91,146 @@ export const FaultToleranceLab: React.FC<FaultToleranceLabProps> = ({ onEventTri
   };
 
   return (
-    <div className="bg-[#0f172a]/70 border border-slate-800 rounded-2xl p-6 backdrop-blur-md space-y-6">
+    <div className="bg-[#11141c] border border-white/[0.08] rounded-lg p-5 space-y-5">
       {/* Header */}
       <div>
-        <div className="flex items-center gap-2 mb-1">
-          <div className="p-2 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400">
-            <ShieldAlert className="h-5 w-5" />
-          </div>
-          <div>
-            <h2 className="text-base font-semibold text-white">
-              Fault-Tolerance Lab: <span className="text-purple-400 font-mono">kill -9</span> Recovery Proof
-            </h2>
-            <p className="text-xs text-slate-400">
-              Demonstrating lease heartbeats & watchdog zombie reconciliation under sudden process death
-            </p>
-          </div>
-        </div>
+        <h2 className="text-sm font-medium text-[#eef0f5] flex items-center gap-2">
+          <Shield className="h-4 w-4 text-[#a3a9b8]" />
+          <span>Crash recovery verification</span>
+        </h2>
+        <p className="text-xs text-[#7a8296] mt-0.5">
+          Guaranteed at-least-once delivery under abrupt process termination (SIGKILL / kill -9)
+        </p>
       </div>
 
-      {/* Architectural Diagram */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 rounded-xl bg-slate-900/80 border border-slate-800 text-xs">
-        <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800 space-y-1.5">
-          <div className="text-emerald-400 font-semibold flex items-center gap-1.5">
-            <Cpu className="h-3.5 w-3.5" />
-            1. Distributed Lease Lock
+      {/* Architectural Principles */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 p-3 rounded-md bg-[#0d1017] border border-white/[0.04] text-xs">
+        <div className="p-2.5 rounded bg-[#11141c] border border-white/[0.04] space-y-1">
+          <div className="text-[#eef0f5] font-medium flex items-center gap-1.5">
+            <Cpu className="h-3.5 w-3.5 text-[#7a8296]" />
+            <span>1. Distributed lease</span>
           </div>
-          <p className="text-slate-400 text-[11px] leading-relaxed">
-            Worker claims task with <code className="text-slate-300">lease_expires_at = now() + 10s</code>.
-            A background coroutine renews this lease every 3s during active execution.
+          <p className="text-[#7a8296] text-[11px] leading-relaxed">
+            Worker locks task with 10s lease duration, renewed every 3s while active.
           </p>
         </div>
 
-        <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800 space-y-1.5">
-          <div className="text-rose-400 font-semibold flex items-center gap-1.5">
-            <Skull className="h-3.5 w-3.5" />
-            2. Sudden Worker Death (kill -9)
+        <div className="p-2.5 rounded bg-[#11141c] border border-white/[0.04] space-y-1">
+          <div className="text-[#eef0f5] font-medium flex items-center gap-1.5">
+            <PowerOff className="h-3.5 w-3.5 text-[#7a8296]" />
+            <span>2. Process failure</span>
           </div>
-          <p className="text-slate-400 text-[11px] leading-relaxed">
-            Worker process killed by OOM or SIGKILL. No cleanup or finally block runs.
-            Heartbeat halts, allowing lease expiration to trigger.
+          <p className="text-[#7a8296] text-[11px] leading-relaxed">
+            SIGKILL terminates worker. No cleanup hooks execute; lease expires.
           </p>
         </div>
 
-        <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800 space-y-1.5">
-          <div className="text-purple-400 font-semibold flex items-center gap-1.5">
-            <RotateCcw className="h-3.5 w-3.5" />
-            3. Watchdog Reconciliation
+        <div className="p-2.5 rounded bg-[#11141c] border border-white/[0.04] space-y-1">
+          <div className="text-[#eef0f5] font-medium flex items-center gap-1.5">
+            <RotateCcw className="h-3.5 w-3.5 text-[#7a8296]" />
+            <span>3. Reconciliation</span>
           </div>
-          <p className="text-slate-400 text-[11px] leading-relaxed">
-            Reconciler scans for <code className="text-slate-300">PROCESSING && lease_expired</code>,
-            reclaims lock, logs crash audit, and re-enqueues without dropping the task.
+          <p className="text-[#7a8296] text-[11px] leading-relaxed">
+            Watchdog detects expired lease, records audit trail, and safely re-enqueues.
           </p>
         </div>
       </div>
 
-      {/* Interactive Step-by-Step Simulator */}
-      <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-4">
-        <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
-          Interactive Live Demonstration
-        </h3>
+      {/* Interactive Step Controls */}
+      <div className="space-y-2">
+        <span className="text-xs text-[#7a8296]">
+          Demonstration sequence
+        </span>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {/* Step 1 Button */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          {/* Step 1 */}
           <button
             onClick={handleStep1}
             disabled={isProcessing || step !== 1}
-            className={`p-3 rounded-xl border text-left transition-all ${
+            className={`p-3 rounded-md border text-left transition-colors duration-150 ${
               step === 1
-                ? 'border-emerald-500 bg-emerald-950/30 text-white shadow-lg shadow-emerald-500/10'
-                : 'border-slate-800 bg-slate-900/40 text-slate-500 opacity-60'
+                ? 'border-white/[0.20] bg-[#1a1e28] text-[#eef0f5]'
+                : 'border-white/[0.04] bg-[#0d1017] text-[#7a8296] opacity-50'
             }`}
           >
             <div className="flex items-center justify-between mb-1">
-              <span className="font-bold text-xs text-emerald-400">Step 1</span>
-              <Zap className="h-3.5 w-3.5 text-emerald-400" />
+              <span className="font-mono text-xs text-[#a3a9b8]">Step 1</span>
+              <Zap className="h-3.5 w-3.5 text-[#7a8296]" />
             </div>
-            <div className="text-xs font-medium text-slate-200">Dispatch Task</div>
-            <div className="text-[10px] text-slate-400 mt-1">Start slow in-flight webhook</div>
+            <div className="text-xs font-medium text-[#eef0f5]">Enqueue active task</div>
+            <div className="text-[11px] text-[#7a8296] mt-0.5">Start in-flight execution</div>
           </button>
 
-          {/* Step 2 Button */}
+          {/* Step 2 */}
           <button
             onClick={handleStep2}
             disabled={isProcessing || step !== 2}
-            className={`p-3 rounded-xl border text-left transition-all ${
+            className={`p-3 rounded-md border text-left transition-colors duration-150 ${
               step === 2
-                ? 'border-rose-500 bg-rose-950/30 text-white shadow-lg shadow-rose-500/10 animate-pulse-subtle'
-                : 'border-slate-800 bg-slate-900/40 text-slate-500 opacity-60'
+                ? 'border-[#e5484d]/30 bg-[#e5484d]/10 text-[#eef0f5]'
+                : 'border-white/[0.04] bg-[#0d1017] text-[#7a8296] opacity-50'
             }`}
           >
             <div className="flex items-center justify-between mb-1">
-              <span className="font-bold text-xs text-rose-400">Step 2</span>
-              <Skull className="h-3.5 w-3.5 text-rose-400" />
+              <span className="font-mono text-xs text-[#e5484d]">Step 2</span>
+              <PowerOff className="h-3.5 w-3.5 text-[#e5484d]" />
             </div>
-            <div className="text-xs font-medium text-slate-200">Simulate kill -9</div>
-            <div className="text-[10px] text-slate-400 mt-1">Kill worker process mid-execution</div>
+            <div className="text-xs font-medium text-[#eef0f5]">Terminate worker</div>
+            <div className="text-[11px] text-[#7a8296] mt-0.5">Simulate SIGKILL mid-task</div>
           </button>
 
-          {/* Step 3 Button */}
+          {/* Step 3 */}
           <button
             onClick={handleStep3}
             disabled={isProcessing || step !== 3}
-            className={`p-3 rounded-xl border text-left transition-all ${
+            className={`p-3 rounded-md border text-left transition-colors duration-150 ${
               step === 3
-                ? 'border-purple-500 bg-purple-950/30 text-white shadow-lg shadow-purple-500/10'
-                : 'border-slate-800 bg-slate-900/40 text-slate-500 opacity-60'
+                ? 'border-white/[0.20] bg-[#1a1e28] text-[#eef0f5]'
+                : 'border-white/[0.04] bg-[#0d1017] text-[#7a8296] opacity-50'
             }`}
           >
             <div className="flex items-center justify-between mb-1">
-              <span className="font-bold text-xs text-purple-400">Step 3</span>
-              <RotateCcw className="h-3.5 w-3.5 text-purple-400" />
+              <span className="font-mono text-xs text-[#a3a9b8]">Step 3</span>
+              <RotateCcw className="h-3.5 w-3.5 text-[#7a8296]" />
             </div>
-            <div className="text-xs font-medium text-slate-200">Watchdog Recovery</div>
-            <div className="text-[10px] text-slate-400 mt-1">Reclaim lease & re-enqueue</div>
+            <div className="text-xs font-medium text-[#eef0f5]">Execute reconciler</div>
+            <div className="text-[11px] text-[#7a8296] mt-0.5">Reclaim lease & re-queue</div>
           </button>
         </div>
       </div>
 
-      {/* Terminal Live Simulation Log */}
-      <div className="rounded-xl bg-slate-950 border border-slate-800 p-4 font-mono text-xs space-y-2">
-        <div className="flex items-center justify-between text-slate-400 border-b border-slate-800 pb-2">
+      {/* Terminal Telemetry Log */}
+      <div className="rounded-md bg-[#07080d] border border-white/[0.06] p-3 font-mono text-xs space-y-2">
+        <div className="flex items-center justify-between text-[#7a8296] border-b border-white/[0.06] pb-2">
           <div className="flex items-center gap-2">
-            <Terminal className="h-3.5 w-3.5 text-emerald-400" />
-            <span>Chaos Proof Event Log</span>
+            <Terminal className="h-3.5 w-3.5" />
+            <span>Reconciliation telemetry</span>
           </div>
           {simulationLogs.length > 0 && (
             <button
               onClick={() => setSimulationLogs([])}
-              className="text-[11px] text-slate-500 hover:text-slate-300"
+              className="text-[11px] text-[#7a8296] hover:text-[#a3a9b8]"
             >
               Clear
             </button>
           )}
         </div>
 
-        <div className="max-h-48 overflow-y-auto space-y-1.5 pt-1 text-[11px]">
+        <div className="max-h-44 overflow-y-auto space-y-1 pt-1 text-[11px] leading-relaxed">
           {simulationLogs.length === 0 ? (
-            <div className="text-slate-600">
-              Run Step 1 to trigger the in-flight task and observe the kill -9 recovery proof.
+            <div className="text-[#7a8296]">
+              Awaiting verification execution. Click Step 1 to begin.
             </div>
           ) : (
             simulationLogs.map((log, i) => (
               <div
                 key={i}
                 className={
-                  log.includes('CRASHED') || log.includes('SIGKILL')
-                    ? 'text-rose-400'
-                    : log.includes('SUCCESS') || log.includes('reclaimed')
-                    ? 'text-emerald-400 font-semibold'
-                    : 'text-slate-300'
+                  log.includes('terminated')
+                    ? 'text-[#e5484d]'
+                    : log.includes('reclaimed') || log.includes('complete')
+                    ? 'text-[#4cc38a]'
+                    : 'text-[#a3a9b8]'
                 }
               >
                 {log}

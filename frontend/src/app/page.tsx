@@ -56,8 +56,7 @@ export default function DashboardPage() {
         eventSource.onmessage = (event) => {
           try {
             const parsed: SSEEvent = JSON.parse(event.data);
-            setEvents((prev) => [parsed, ...prev.slice(0, 199)]); // keep max 200 events
-            // Auto refresh metrics when relevant events occur
+            setEvents((prev) => [parsed, ...prev.slice(0, 199)]);
             refreshData();
           } catch (e) {
             console.error('Error parsing SSE event:', e);
@@ -70,7 +69,6 @@ export default function DashboardPage() {
             eventSource.close();
             eventSource = null;
           }
-          // Attempt reconnection after 3 seconds
           reconnectTimeout = setTimeout(connectSSE, 3000);
         };
       } catch (e) {
@@ -88,7 +86,7 @@ export default function DashboardPage() {
   }, [refreshData]);
 
   return (
-    <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-[#0b0d14] text-[#eef0f5] flex flex-col font-sans">
       {/* Top Navigation */}
       <Navbar
         sseStatus={sseStatus}
@@ -99,13 +97,13 @@ export default function DashboardPage() {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {/* Real-time KPI Bar */}
+        {/* KPI Bar */}
         <MetricsOverview metrics={metrics} />
 
         {/* Tab 1: Live Stream & Dispatcher */}
         {activeTab === 'stream' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-6 space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            <div className="lg:col-span-6 space-y-5">
               <WebhookDispatcher onDispatched={refreshData} />
             </div>
             <div className="lg:col-span-6">
@@ -125,7 +123,7 @@ export default function DashboardPage() {
 
         {/* Tab 3: Kill-9 Proof Lab */}
         {activeTab === 'chaos' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
             <div className="lg:col-span-7">
               <FaultToleranceLab onEventTriggered={refreshData} />
             </div>
@@ -141,8 +139,8 @@ export default function DashboardPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-900 bg-[#070b12] py-4 text-center text-xs text-slate-500">
-        Flagship Architectural Portfolio &bull; Project 2: Reliable Webhook / Async Job Engine &bull; Next.js &bull; FastAPI &bull; Redis ARQ &bull; DLQ &bull; Kill-9 Proof
+      <footer className="border-t border-white/[0.06] bg-[#07080d] py-3.5 text-center text-xs text-[#7a8296] font-mono">
+        Webhook Engine · At-least-once delivery with deterministic lease reconciliation
       </footer>
     </div>
   );

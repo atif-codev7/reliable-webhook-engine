@@ -3,15 +3,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SSEEvent } from '../lib/types';
 import {
-  Radio,
   Trash2,
-  Filter,
-  CheckCircle,
+  Check,
   AlertCircle,
   Clock,
   Zap,
-  ShieldAlert,
-  ArrowRight,
+  Shield,
   ChevronDown,
   ChevronRight,
 } from 'lucide-react';
@@ -47,92 +44,91 @@ export const LiveStreamFeed: React.FC<LiveStreamFeedProps> = ({
     switch (type) {
       case 'JOB_DISPATCHED':
         return {
-          bg: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
+          bg: 'bg-[#1a1e28] text-[#a3a9b8] border-white/[0.08]',
           icon: Zap,
-          label: 'DISPATCHED',
+          label: 'Dispatched',
         };
       case 'JOB_PROCESSING':
         return {
-          bg: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+          bg: 'bg-[#f59e0b]/10 text-[#f59e0b] border-[#f59e0b]/20',
           icon: Clock,
-          label: 'PROCESSING',
+          label: 'Processing',
         };
       case 'JOB_RETRY_SCHEDULED':
         return {
-          bg: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
+          bg: 'bg-[#f59e0b]/10 text-[#f59e0b] border-[#f59e0b]/20',
           icon: Clock,
-          label: 'BACKOFF RETRY',
+          label: 'Backoff retry',
         };
       case 'JOB_COMPLETED':
         return {
-          bg: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
-          icon: CheckCircle,
-          label: 'COMPLETED',
+          bg: 'bg-[#4cc38a]/10 text-[#4cc38a] border-[#4cc38a]/20',
+          icon: Check,
+          label: 'Completed',
         };
       case 'JOB_DEAD_LETTERED':
         return {
-          bg: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
+          bg: 'bg-[#e5484d]/10 text-[#e5484d] border-[#e5484d]/20',
           icon: AlertCircle,
-          label: 'DEAD LETTER (DLQ)',
+          label: 'Dead letter',
         };
       case 'JOB_RECOVERED_FROM_CRASH':
         return {
-          bg: 'bg-purple-500/20 text-purple-300 border-purple-500/40',
-          icon: ShieldAlert,
-          label: 'KILL-9 RECOVERED',
+          bg: 'bg-[#1a1e28] text-[#eef0f5] border-white/[0.14]',
+          icon: Shield,
+          label: 'Crash recovered',
         };
       case 'DLQ_MANUAL_RETRY':
         return {
-          bg: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30',
+          bg: 'bg-[#1a1e28] text-[#a3a9b8] border-white/[0.08]',
           icon: Zap,
-          label: 'MANUAL RETRY',
+          label: 'Manual retry',
         };
       default:
         return {
-          bg: 'bg-slate-700/30 text-slate-300 border-slate-600',
-          icon: Radio,
+          bg: 'bg-[#11141c] text-[#7a8296] border-white/[0.06]',
+          icon: Zap,
           label: type,
         };
     }
   };
 
   return (
-    <div className="bg-[#0f172a]/70 border border-slate-800 rounded-2xl flex flex-col h-[560px] backdrop-blur-md overflow-hidden">
+    <div className="bg-[#11141c] border border-white/[0.08] rounded-lg flex flex-col h-[520px] overflow-hidden">
       {/* Header & Controls */}
-      <div className="p-4 border-b border-slate-800 flex items-center justify-between flex-wrap gap-2">
+      <div className="p-3.5 border-b border-white/[0.08] bg-[#0d1017] flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
-          <Radio className="h-4 w-4 text-emerald-400 animate-pulse" />
-          <h3 className="text-sm font-semibold text-white">
-            Real-Time SSE Event Stream
+          <h3 className="text-sm font-medium text-[#eef0f5]">
+            Telemetry stream
           </h3>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-mono">
-            {filteredEvents.length} events
+          <span className="text-xs font-mono text-[#7a8296]">
+            ({filteredEvents.length})
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           {/* Filter dropdown */}
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
-            className="text-xs bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-300 focus:outline-none"
+            className="text-xs bg-[#11141c] border border-white/[0.08] rounded-md px-2.5 py-1 text-[#a3a9b8] focus:outline-none"
           >
-            <option value="ALL">All Events</option>
+            <option value="ALL">All events</option>
             <option value="JOB_DISPATCHED">Dispatched</option>
             <option value="JOB_PROCESSING">Processing</option>
-            <option value="JOB_RETRY_SCHEDULED">Retries / Backoff</option>
+            <option value="JOB_RETRY_SCHEDULED">Backoff retries</option>
             <option value="JOB_COMPLETED">Completed</option>
-            <option value="JOB_DEAD_LETTERED">Dead Letter (DLQ)</option>
-            <option value="JOB_RECOVERED_FROM_CRASH">Kill-9 Recovered</option>
+            <option value="JOB_DEAD_LETTERED">Dead letter</option>
+            <option value="JOB_RECOVERED_FROM_CRASH">Crash recovered</option>
           </select>
 
-          {/* Auto-scroll checkbox */}
-          <label className="flex items-center gap-1.5 text-xs text-slate-400 cursor-pointer">
+          {/* Auto-scroll toggle */}
+          <label className="flex items-center gap-1.5 text-xs text-[#7a8296] cursor-pointer">
             <input
               type="checkbox"
               checked={autoScroll}
               onChange={(e) => setAutoScroll(e.target.checked)}
-              className="rounded bg-slate-900 border-slate-700 text-emerald-500 focus:ring-0"
+              className="rounded bg-[#11141c] border-white/[0.10] text-[#a3a9b8] focus:ring-0"
             />
             <span>Auto-scroll</span>
           </label>
@@ -140,10 +136,10 @@ export const LiveStreamFeed: React.FC<LiveStreamFeedProps> = ({
           {/* Clear button */}
           <button
             onClick={onClear}
-            className="p-1.5 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-slate-800 transition-colors"
-            title="Clear Stream History"
+            className="p-1 text-[#7a8296] hover:text-[#eef0f5] rounded hover:bg-[#1a1e28] transition-colors"
+            title="Clear stream"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
@@ -151,14 +147,13 @@ export const LiveStreamFeed: React.FC<LiveStreamFeedProps> = ({
       {/* Stream List */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 p-4 overflow-y-auto space-y-2.5 font-mono text-xs"
+        className="flex-1 p-3 overflow-y-auto space-y-1.5 font-mono text-xs"
       >
         {filteredEvents.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-slate-500 space-y-2">
-            <Radio className="h-8 w-8 text-slate-600 animate-pulse" />
-            <p>Listening for real-time SSE delivery events...</p>
-            <p className="text-[11px] text-slate-600">
-              Dispatch a webhook above to watch live state transitions
+          <div className="h-full flex flex-col items-center justify-center text-[#7a8296] space-y-1">
+            <p className="text-xs font-normal">Awaiting webhook delivery events...</p>
+            <p className="text-[11px] text-[#7a8296]">
+              Dispatch a task from the bench to inspect live state transitions
             </p>
           </div>
         ) : (
@@ -170,42 +165,42 @@ export const LiveStreamFeed: React.FC<LiveStreamFeedProps> = ({
             return (
               <div
                 key={index}
-                className="p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 hover:border-slate-700 transition-all"
+                className="p-2.5 rounded-md bg-[#0d1017] border border-white/[0.04] hover:border-white/[0.08] transition-colors"
               >
                 <div
                   className="flex items-center justify-between cursor-pointer"
                   onClick={() => setExpandedIndex(isExpanded ? null : index)}
                 >
-                  <div className="flex items-center gap-2.5 flex-wrap">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span
-                      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-semibold border ${badge.bg}`}
+                      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium border ${badge.bg}`}
                     >
                       <Icon className="h-3 w-3" />
                       <span>{badge.label}</span>
                     </span>
 
                     {ev.job_id && (
-                      <span className="text-slate-400 truncate max-w-[120px] sm:max-w-[200px]">
-                        ID: <span className="text-slate-200">{ev.job_id.slice(0, 8)}...</span>
+                      <span className="text-[#7a8296] truncate max-w-[130px] sm:max-w-[180px]">
+                        id: <span className="text-[#a3a9b8]">{ev.job_id.slice(0, 8)}</span>
                       </span>
                     )}
 
                     {ev.data?.attempt && (
-                      <span className="px-1.5 py-0.5 rounded bg-slate-800 text-amber-300 text-[10px]">
-                        Attempt {ev.data.attempt}/{ev.data.max_retries || 5}
+                      <span className="text-[11px] text-[#7a8296]">
+                        attempt {ev.data.attempt}/{ev.data.max_retries || 5}
                       </span>
                     )}
 
                     {ev.data?.backoff_delay_sec && (
-                      <span className="text-orange-400 text-[11px]">
-                        Backoff delay: {ev.data.backoff_delay_sec}s
+                      <span className="text-[#f59e0b] text-[11px]">
+                        +{ev.data.backoff_delay_sec}s
                       </span>
                     )}
 
                     {ev.data?.status_code && (
                       <span
-                        className={`text-[11px] font-bold ${
-                          ev.data.status_code < 300 ? 'text-emerald-400' : 'text-rose-400'
+                        className={`text-[11px] font-medium tabular-nums ${
+                          ev.data.status_code < 300 ? 'text-[#4cc38a]' : 'text-[#e5484d]'
                         }`}
                       >
                         HTTP {ev.data.status_code}
@@ -213,34 +208,34 @@ export const LiveStreamFeed: React.FC<LiveStreamFeedProps> = ({
                     )}
 
                     {ev.data?.duration_ms && (
-                      <span className="text-cyan-400 text-[10px]">
+                      <span className="text-[#a3a9b8] text-[11px] tabular-nums">
                         {ev.data.duration_ms} ms
                       </span>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2 text-slate-500 text-[11px]">
-                    <span>{new Date(ev.timestamp).toLocaleTimeString()}</span>
+                  <div className="flex items-center gap-2 text-[#7a8296] text-[11px] tabular-nums">
+                    <span>{new Date(ev.timestamp).toLocaleTimeString([], { hour12: false })}</span>
                     {isExpanded ? (
-                      <ChevronDown className="h-3.5 w-3.5" />
+                      <ChevronDown className="h-3 w-3" />
                     ) : (
-                      <ChevronRight className="h-3.5 w-3.5" />
+                      <ChevronRight className="h-3 w-3" />
                     )}
                   </div>
                 </div>
 
                 {/* Expanded Details */}
                 {isExpanded && (
-                  <div className="mt-2.5 pt-2 border-t border-slate-800 text-[11px]">
-                    <div className="text-slate-400 mb-1">
-                      Full Timestamp: <span className="text-slate-200">{ev.timestamp}</span>
+                  <div className="mt-2 pt-2 border-t border-white/[0.06] text-[11px]">
+                    <div className="text-[#7a8296] mb-1">
+                      Timestamp: <span className="text-[#a3a9b8]">{ev.timestamp}</span>
                     </div>
                     {ev.data?.error && (
-                      <div className="text-rose-400 bg-rose-950/20 p-2 rounded border border-rose-900/40 mb-2">
+                      <div className="text-[#e5484d] bg-[#e5484d]/10 p-2 rounded border border-[#e5484d]/20 mb-2">
                         {ev.data.error}
                       </div>
                     )}
-                    <pre className="p-2 rounded bg-slate-950/70 text-slate-300 overflow-x-auto border border-slate-800/80">
+                    <pre className="p-2.5 rounded bg-[#07080d] text-[#a3a9b8] overflow-x-auto border border-white/[0.06] leading-relaxed">
                       {JSON.stringify(ev.data, null, 2)}
                     </pre>
                   </div>
