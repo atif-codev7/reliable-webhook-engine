@@ -1,0 +1,114 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: webhook_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: webhook_user
+      POSTGRES_PASSWORD: webhook_password
+      POSTGRES_DB: webhook_engine
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U webhook_user -d webhook_engine"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: webhook_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  producer:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: webhook_producer
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://webhook_user:webhook_password@postgres:5432/webhook_engine
+      - REDIS_URL=redis://redis:6379/0
+      - ARQ_QUEUE_NAME=webhook_queue
+      - MAX_RETRIES=5
+      - BACKOFF_BASE_SECONDS=1.0
+      - BACKOFF_FACTOR=2.0
+      - LEASE_DURATION_SECONDS=10
+      - WATCHDOG_CHECK_INTERVAL=4
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: webhook_arq_worker
+    restart: unless-stopped
+    command: arq backend.app.worker.WorkerSettings
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://webhook_user:webhook_password@postgres:5432/webhook_engine
+      - REDIS_URL=redis://redis:6379/0
+      - ARQ_QUEUE_NAME=webhook_queue
+      - MAX_RETRIES=5
+      - BACKOFF_BASE_SECONDS=1.0
+      - BACKOFF_FACTOR=2.0
+      - LEASE_DURATION_SECONDS=10
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  watchdog:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: webhook_watchdog
+    restart: unless-stopped
+    command: python -m backend.app.watchdog
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://webhook_user:webhook_password@postgres:5432/webhook_engine
+      - REDIS_URL=redis://redis:6379/0
+      - WATCHDOG_CHECK_INTERVAL=3
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: webhook_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+      - NEXT_PUBLIC_SSE_URL=http://localhost:8000/api/v1/events/stream
+    depends_on:
+      - producer
+
+volumes:
+  pgdata:
+  redisdata:
